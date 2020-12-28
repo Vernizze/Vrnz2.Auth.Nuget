@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Security.Claims;
 using Vrnz2.Auth.Nuget.DTOs;
 using Vrnz2.Auth.Nuget.Handler;
+using Vrnz2.Infra.CrossCutting.Extensions;
 using Vrnz2.Infra.CrossCutting.Libraries.HttpClient;
 
 namespace Vrnz2.Auth.Nuget.Attributes
@@ -57,11 +58,12 @@ namespace Vrnz2.Auth.Nuget.Attributes
             {
                 var token = context.HttpContext.Request.Headers["token"];
 
-                var claims = context.HttpContext.User.Claims.Select(s => s.Value).ToList();
+                var claims = _claims.Select(s => s.Value).ToList();
 
                 var response = HttpRequestFactory.Post(SettingsHandler.Instance.AuthSettings.AutServerUrl, new AuthServerRequest { token = token.ToString(), claims = claims }).Result;
 
-                context.Result = GetResult(response);
+                if (!response.StatusCode.IsSuccessHttpStatusCode())
+                    context.Result = GetResult(response);
             }
             catch (Exception ex)
             {
@@ -89,9 +91,3 @@ namespace Vrnz2.Auth.Nuget.Attributes
         #endregion
     }
 }
-
-//var hasClaim = context.HttpContext.User.Claims.Any(c => c.Type == _claim.Type && c.Value == _claim.Value);
-//if (!hasClaim)
-//{
-//    context.Result = new ForbidResult();
-//}
